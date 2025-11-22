@@ -7,28 +7,10 @@ import Header from './Header';
 import type { Habit } from './types';
 
 function App() {
-  useEffect(() => console.log('App component loaded and mounted'), []);
-
   const [appName, setAppName] = useState('Habit Tracker');
-  useEffect(() => console.log(`App name changed to ${appName}`), [appName]);
-
   const [habits, setHabits] = useState<Habit[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>('');
-  useEffect(() => {
-    async function fetchData() {
-      setLoading(true);
-      setError('');
-      try {
-        setHabits(await fetchHabits());
-      } catch (error) {
-        setError(error);
-      }
-      setLoading(false);
-    }
-    fetchData();
-  }, []);
-
   const [newTitle, setNewTitle] = useState<string>('');
 
   const addHabit = useCallback((title: string) => {
@@ -66,6 +48,25 @@ function App() {
     setNewTitle('');
   };
 
+  useEffect(() => console.log('App component loaded and mounted'), []);
+  useEffect(() => console.log(`App name changed to ${appName}`), [appName]);
+  useEffect(() => {
+    async function fetchData() {
+      setLoading(true);
+      setError('');
+      try {
+        setHabits(await fetchHabits());
+      } catch (error) {
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
+        setError(errorMessage);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchData();
+  }, []);
+
   return (
     <>
       <Header title={appName} />
@@ -75,7 +76,7 @@ function App() {
       {loading ? (
         <div>Loading...</div>
       ) : error ? (
-        <div>{`${error}`}</div>
+        <div>{`Error: ${error}`}</div>
       ) : (
         <ol>
           {habits.map((habit) => (
