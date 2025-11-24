@@ -1,71 +1,58 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEffect, useState } from 'react';
+import { deleteHabit, fetchHabits, saveHabit, toggleHabit } from './api';
 
-import { fetchHabits } from './api';
 import './App.css';
 import HabitItem from './HabitItem';
 import Header from './Header';
-import type { Habit } from './types';
 
 function App() {
   const [appName, setAppName] = useState('Habit Tracker');
-  const [habits, setHabits] = useState<Habit[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string>('');
   const [newTitle, setNewTitle] = useState<string>('');
 
-  const addHabit = useCallback((title: string) => {
-    setHabits((prevHabits) => {
-      const id =
-        prevHabits.length === 0 ? 1 : prevHabits[prevHabits.length - 1].id + 1;
-      return [
-        ...prevHabits,
-        {
-          id,
-          title,
-          done: false,
-        },
-      ];
-    });
-  }, []);
-  const deleteHabit = useCallback((habit: Habit) => {
-    setHabits((prevHabits) => prevHabits.filter((h) => habit.id !== h.id));
-  }, []);
-  const toggleDone = useCallback((habit: Habit) => {
-    setHabits((prevHabits) =>
-      prevHabits.map((h) => {
-        if (h.id !== habit.id) return h;
-        return {
-          ...h,
-          done: !h.done,
-        };
-      })
-    );
-  }, []);
+  const {
+    data: habits,
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: ['habits'],
+    queryFn: fetchHabits,
+  });
+
+  const queryClient = useQueryClient();
+
+  const createHabitMutation = useMutation({
+    mutationFn: saveHabit,
+    onSuccess: () => {
+      console.log('saveHabit sucess');
+      queryClient.invalidateQueries({ queryKey: ['habits'] });
+    },
+  });
+
+  const toggleHabitMutation = useMutation({
+    mutationFn: toggleHabit,
+    onSuccess: () => {
+      console.log('toggleHabit success');
+      queryClient.invalidateQueries({ queryKey: ['habits'] });
+    },
+  });
+
+  const deleteHabitMutation = useMutation({
+    mutationFn: deleteHabit,
+    onSuccess: () => {
+      console.log('deleteHabit success');
+      queryClient.invalidateQueries({ queryKey: ['habits'] });
+    },
+  });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    addHabit(newTitle);
+    createHabitMutation.mutate(newTitle);
     setNewTitle('');
   };
 
   useEffect(() => console.log('App component loaded and mounted'), []);
   useEffect(() => console.log(`App name changed to ${appName}`), [appName]);
-  useEffect(() => {
-    async function fetchData() {
-      setLoading(true);
-      setError('');
-      try {
-        setHabits(await fetchHabits());
-      } catch (error) {
-        const errorMessage =
-          error instanceof Error ? error.message : String(error);
-        setError(errorMessage);
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchData();
-  }, []);
 
   return (
     <>
@@ -73,18 +60,20 @@ function App() {
       <button onClick={() => setAppName((prevName) => `${prevName} 💪`)}>
         Update App Name
       </button>
-      {loading ? (
+      {isLoading ? (
         <div>Loading...</div>
       ) : error ? (
-        <div>{`Error: ${error}`}</div>
+        <div>{`Error: ${error.message}`}</div>
+      ) : !habits || habits.length === 0 ? (
+        <div>No Habits yet!</div>
       ) : (
         <ol>
           {habits.map((habit) => (
             <HabitItem
               key={habit.id}
               habit={habit}
-              toggleDone={toggleDone}
-              deleteHabit={deleteHabit}
+              toggleDone={() => toggleHabitMutation.mutate(habit.id)}
+              deleteHabit={() => deleteHabitMutation.mutate(habit.id)}
             ></HabitItem>
           ))}
         </ol>
@@ -97,7 +86,9 @@ function App() {
           value={newTitle}
           onChange={(e) => setNewTitle(e.target.value)}
         ></input>
-        <button type="submit">Add Habit</button>
+        <button type="submit" disabled={createHabitMutation.isPending}>
+          Add Habit
+        </button>
       </form>
     </>
   );
