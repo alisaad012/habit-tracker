@@ -4,11 +4,11 @@ import type { Habit } from './types';
 
 interface HabitItemProp {
   habit: Habit;
-  toggleDone: (habit: Habit) => void;
+  toggleHabit: (habit: Habit) => void;
   deleteHabit: (habit: Habit) => void;
 }
 
-function HabitItem({ habit, toggleDone, deleteHabit }: HabitItemProp) {
+function HabitItem({ habit, toggleHabit, deleteHabit }: HabitItemProp) {
   return (
     <>
       <li className={habit.done ? 'habit-done' : undefined}>
@@ -16,7 +16,7 @@ function HabitItem({ habit, toggleDone, deleteHabit }: HabitItemProp) {
           type="checkbox"
           name="done"
           checked={habit.done}
-          onChange={() => toggleDone(habit)}
+          onChange={() => toggleHabit(habit)}
         />
         {habit.title}
 

@@ -2,17 +2,19 @@ import type { Habit } from './types';
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
+let counter = 1;
+
 const habits: Habit[] = [
-  { id: 1, title: 'Drink water', done: true },
-  { id: 2, title: 'Go to the gym', done: true },
-  { id: 3, title: 'Walk 10k steps', done: false },
+  { id: counter++, title: 'Drink water', done: true },
+  { id: counter++, title: 'Go to the gym', done: true },
+  { id: counter++, title: 'Walk 10k steps', done: false },
 ];
 
 export const fetchHabits = async (): Promise<Habit[]> => {
   await delay(1000);
   if (Math.random() < 0.5) {
-    console.error('Timed out');
-    throw Error('Timed out');
+    console.error('fetchHabits timed out');
+    throw new Error('Timed out');
   }
   return [...habits];
 };
@@ -20,7 +22,7 @@ export const fetchHabits = async (): Promise<Habit[]> => {
 export const saveHabit = async (title: string): Promise<Habit> => {
   await delay(1000);
   const newHabit = {
-    id: 4,
+    id: counter++,
     title,
     done: false,
   };
@@ -30,6 +32,10 @@ export const saveHabit = async (title: string): Promise<Habit> => {
 
 export const toggleHabit = async (id: number): Promise<Habit> => {
   await delay(1000);
+  if (Math.random() < 0.5) {
+    console.log('toggleHabit timed out');
+    throw new Error('Timed out');
+  }
   const habit = habits.find((habit) => habit.id === id);
   if (!habit) throw new Error('Habit not found');
   habit.done = !habit.done;
